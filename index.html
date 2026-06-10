@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wor Flow</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="a">
+        <header class="h">
+            <div class="br">
+                <span class="bn">Wor Flow</span>
+            </div>
+            <nav class="n" role="tablist">
+                <a href="#" class="ni active" data-tab="presets" role="tab">Presets</a>
+                <a href="#" class="ni" data-tab="graph" role="tab">Graphs</a>
+                <a href="#" class="ni" data-tab="sfx" role="tab">SFX</a>
+                <a href="#" class="ni" data-tab="assets" role="tab">Assets</a>
+                <a href="#" class="ni" data-tab="settings" role="tab">Settings</a>
+            </nav>
+            <button type="button" class="btn ico help" title="Help">?</button>
+        </header>
+
+        <div class="sb">
+            <div class="sm" id="status-message">
+                <span class="sd"></span>
+                <span>Ready</span>
+            </div>
+        </div>
+
+        <main class="m">
+            <div class="tb active" id="presets">
+                <div class="pb">
+                    <div class="pl">
+                        <h1 class="pt">Presets</h1>
+                        <div class="ps">
+                            <button type="button" class="psi active" data-subtab="presets-view">Effects</button>
+                            <button type="button" class="psi" data-subtab="eoa-view">Tools</button>
+                        </div>
+                    </div>
+                    <div class="pr">
+                        <button type="button" class="btn wrk acti pri" id="import-preset-btn">Import FFX</button>
+                    </div>
+                </div>
+
+                <div class="psc active" id="presets-view">
+                <div class="w">
+                    <div class="pct">
+                        <div class="ch">
+                            <h3>Visual Effects</h3>
+                            <span class="cn">8 presets</span>
+                        </div>
+                        <div class="pg">
+                            <div class="pc" data-ae="applyGlowEffect()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/ve/glow.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Glow Effect</h4>
+                                    <p>Professional glow with intensity</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyGaussianBlur()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/ve/blur.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Gaussian Blur</h4>
+                                    <p>Smooth blur for depth of field</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applySharpEffect()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/ve/sharpen.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Sharpen</h4>
+                                    <p>Enhance image clarity</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyFlashEffect()" data-preview="assets/previews/ve/flash.mp4">
+                                <div class="pv">
+                                    <img src="assets/previews/main.jpg" alt="Preview" class="vi">
+                                </div>
+                                <div class="pi">
+                                    <h4>Flash</h4>
+                                    <p>Intense flash effect</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyCameraShake()" data-preview="assets/previews/ve/shake.mp4">
+                                <div class="pv">
+                                    <img src="assets/previews/main.jpg" alt="Preview" class="vi">
+                                </div>
+                                <div class="pi">
+                                    <h4>Shake</h4>
+                                    <p>Camera shake effect</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyWaveWarp()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/ve/wave.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Wave Warp</h4>
+                                    <p>Fluid wave distortion</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyTurbulentDisplace()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/ve/turbulent.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Turbulent Displace</h4>
+                                    <p>Chaotic displacement</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pct">
+                        <div class="ch">
+                            <h3>Distortion Effects</h3>
+                            <span class="cn">8 presets</span>
+                        </div>
+                        <div class="pg">
+                            <div class="pc" data-ae="applyMirror()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/de/mirror.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Mirror</h4>
+                                    <p>Reflection and mirror effects</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyPolarCoordinates()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/de/polar.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Polar Coordinates</h4>
+                                    <p>Polar coordinate transformation</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyTwirl()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/de/twirl.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Twirl</h4>
+                                    <p>Spiral twirl distortion</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyBulge()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/de/thicc.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Bulge</h4>
+                                    <p>Spherical bulge effect</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyRipple()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/de/ripple.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Ripple</h4>
+                                    <p>Concentric ripple waves</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applySpherize()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/de/sphearize.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Spherize</h4>
+                                    <p>Spherical lens distortion</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyFractalNoise()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/de/fractal.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Fractal Noise</h4>
+                                    <p>Organic noise patterns</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyLensFlare()">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/de/flare.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Lens Flare</h4>
+                                    <p>Realistic lens flare effect</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pct">
+                        <div class="ch">
+                            <h3>Color Grading</h3>
+                            <span class="cn">3 presets</span>
+                        </div>
+                        <div class="pg">
+                            <div class="pc" data-ffx="vintage.ffx">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/cg/vintage.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Vintage Film</h4>
+                                    <p>Classic film look</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ffx="cinematic.ffx">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/cg/cinematic.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Cinematic</h4>
+                                    <p>Hollywood color grade</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ffx="quality.ffx">
+                                <div class="pvs">
+                                    <img src="assets/previews/main.jpg" alt="Before" class="vb">
+                                    <img src="assets/previews/cg/quality.png" alt="After" class="va">
+                                    <input type="range" min="0" max="100" value="50" class="sh">
+                                </div>
+                                <div class="pi">
+                                    <h4>Quality CC</h4>
+                                    <p>Enhanced quality</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pct">
+                        <div class="ch">
+                            <h3>Transitions</h3>
+                            <span class="cn">4 presets</span>
+                        </div>
+                        <div class="pg">
+                            <div class="pc" data-ae="applyFadeTransition()" data-preview="assets/previews/te/fadeinout.mp4">
+                                <div class="pv">
+                                    <img src="assets/previews/main.jpg" alt="Preview" class="vi">
+                                </div>
+                                <div class="pi">
+                                    <h4>Fade In/Out</h4>
+                                    <p>Smooth fade transition</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyWipeTransition()" data-preview="assets/previews/te/wipe.mp4">
+                                <div class="pv">
+                                    <img src="assets/previews/main.jpg" alt="Preview" class="vi">
+                                </div>
+                                <div class="pi">
+                                    <h4>Wipe</h4>
+                                    <p>Directional wipe</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applyZoomTransition()" data-preview="assets/previews/te/zoom.mp4">
+                                <div class="pv">
+                                    <img src="assets/previews/main.jpg" alt="Preview" class="vi">
+                                </div>
+                                <div class="pi">
+                                    <h4>Zoom</h4>
+                                    <p>Scale transition</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                            <div class="pc" data-ae="applySpinTransition()" data-preview="assets/previews/te/spin.mp4">
+                                <div class="pv">
+                                    <img src="assets/previews/main.jpg" alt="Preview" class="vi">
+                                </div>
+                                <div class="pi">
+                                    <h4>Spin</h4>
+                                    <p>Rotation transition</p>
+                                    <button class="btn acti">Apply</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pct">
+                        <div class="ch">
+                            <h3>Custom Presets</h3>
+                            <span class="cn" id="custom-preset-count">0 presets</span>
+                        </div>
+                        <div class="pg" id="custom-presets-grid">
+                            <p class="e">No custom presets yet. Hit Import Preset to add FFX files.</p>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+                <div class="psc" id="eoa-view">
+                    <div class="w">
+                    <div class="eo">
+                        <div class="es">
+                            <h3>Layer Actions</h3>
+                            <div class="eg">
+                                <button class="btn eoa" data-action="precompose"><span>Pre-compose</span></button>
+                                <button class="btn eoa" data-action="create-null"><span>Create Null</span></button>
+                                <button class="btn eoa" data-action="create-solid"><span>Create Solid</span></button>
+                                <button class="btn eoa" data-action="create-adjustment"><span>Adjustment Layer</span></button>
+                                <button class="btn eoa" data-action="create-camera"><span>Create Camera</span></button>
+                                <button class="btn eoa" data-action="create-light"><span>Create Light</span></button>
+                            </div>
+                        </div>
+
+                        <div class="es">
+                            <h3>Time Controls</h3>
+                            <div class="eg">
+                                <button class="btn eoa" data-action="time-remapping"><span>Time Remapping</span></button>
+                                <button class="btn eoa" data-action="reverse-time"><span>Reverse Time</span></button>
+                                <button class="btn eoa" data-action="freeze-frame"><span>Freeze Frame</span></button>
+                            </div>
+                        </div>
+
+                        <div class="es">
+                            <h3>Speed Adjustments</h3>
+                            <div class="eg">
+                                <button class="btn eoa" data-action="speed-120"><span>120% Speed</span></button>
+                                <button class="btn eoa" data-action="speed-150"><span>150% Speed</span></button>
+                                <button class="btn eoa" data-action="speed-200"><span>200% Speed</span></button>
+                                <button class="btn eoa" data-action="speed-custom"><span>Custom Speed</span></button>
+                                <button class="btn eoa" data-action="speed-50"><span>50% Speed</span></button>
+                            </div>
+                        </div>
+
+                        <div class="es">
+                            <h3>Quick Tools</h3>
+                            <div class="eg">
+                                <button class="btn eoa" data-action="trim-comp"><span>Trim Comp</span></button>
+                                <button class="btn eoa" data-action="center-anchor"><span>Center Anchor</span></button>
+                                <button class="btn eoa" data-action="fit-to-comp"><span>Fit to Comp</span></button>
+                                <button class="btn eoa" data-action="duplicate-layer"><span>Duplicate Layer</span></button>
+                                <button class="btn eoa" data-action="split-layer"><span>Split Layer</span></button>
+                                <button class="btn eoa" data-action="sequence-layers"><span>Sequence Layers</span></button>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tb" id="graph">
+                <div class="pb">
+                    <div class="pl">
+                        <h1 class="pt">Graph Curves</h1>
+                        <p class="ph">Select keyframes on a timeline property, then pick a curve.</p>
+                    </div>
+                </div>
+                <div class="w">
+                    <div class="gg">
+                        <div class="gc" data-preset="linear">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Linear</span>
+                        </div>
+                        <div class="gc" data-preset="ease-in">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Ease In</span>
+                        </div>
+                        <div class="gc" data-preset="ease-out">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Ease Out</span>
+                        </div>
+                        <div class="gc" data-preset="ease-in-out">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Ease In-Out</span>
+                        </div>
+                        <div class="gc" data-preset="smooth">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Smooth</span>
+                        </div>
+                        <div class="gc" data-preset="expo-in">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Expo In</span>
+                        </div>
+                        <div class="gc" data-preset="expo-out">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Expo Out</span>
+                        </div>
+                        <div class="gc" data-preset="speed-ramp">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Speed Ramp</span>
+                        </div>
+                        <div class="gc" data-preset="quad-in">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Quad In</span>
+                        </div>
+                        <div class="gc" data-preset="quad-out">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Quad Out</span>
+                        </div>
+                        <div class="gc" data-preset="cubic-in">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Cubic In</span>
+                        </div>
+                        <div class="gc" data-preset="cubic-out">
+                            <canvas class="gx" width="120" height="120"></canvas>
+                            <span class="gn">Cubic Out</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tb" id="sfx">
+                <div class="pb">
+                    <div class="pl">
+                        <h1 class="pt">Sound Effects</h1>
+                    </div>
+                    <div class="pr">
+                        <input type="text" id="sfx-search" class="fi" placeholder="Search...">
+                        <button type="button" class="btn wrk" id="refresh-sfx-btn">Refresh</button>
+                    </div>
+                </div>
+                <div class="w" id="sfx-container">
+                    <div class="fl">Loading sound effects...</div>
+                </div>
+            </div>
+
+            <div class="tb" id="assets">
+                <div class="pb">
+                    <div class="pl">
+                        <h1 class="pt">Assets</h1>
+                    </div>
+                    <div class="pr">
+                        <button type="button" class="btn wrk" id="browse-files-btn">Browse</button>
+                        <button type="button" class="btn wrk" id="create-folder-btn">New Folder</button>
+                        <button type="button" class="btn wrk" id="refresh-assets-btn">Refresh</button>
+                    </div>
+                </div>
+                <div class="w">
+                    <div class="au" id="asset-upload-area">
+                        <div class="aut">
+                            <h3>Drop files here</h3>
+                            <p>Images, video, audio, and AEP files</p>
+                        </div>
+                        <input type="file" id="asset-file-input" multiple accept=".jpg,.jpeg,.png,.gif,.mp4,.mov,.avi,.mp3,.wav,.aep,.aet" style="display: none;">
+                    </div>
+
+                    <div class="ab">
+                        <div class="abr">
+                            <div class="ap">
+                                <span class="pai active" data-path="">Assets</span>
+                                <span class="psp">/</span>
+                            </div>
+                            <div class="av">
+                                <button class="btn vw active" data-view="grid">Grid</button>
+                                <button class="btn vw" data-view="list">List</button>
+                            </div>
+                        </div>
+
+                        <div class="ag" id="asset-grid">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tb" id="settings">
+                <div class="pb">
+                    <div class="pl">
+                        <h1 class="pt">Settings</h1>
+                        <span class="shn" id="storage-status">Saved</span>
+                    </div>
+                    <div class="pr">
+                        <button type="button" class="btn wrk" id="save-settings-btn">Save</button>
+                        <button type="button" class="btn wrk" id="reset-settings-btn">Reset</button>
+                    </div>
+                </div>
+                <div class="w sg">
+                    <div class="sly">
+
+                        <section class="stc">
+                            <header class="stc hd">
+                                <h3>Connection</h3>
+                            </header>
+                            <div class="stc bd">
+                                <div class="skv">
+                                    <span class="skv l">Status</span>
+                                    <span class="skv v" id="settings-ae-status">Checking…</span>
+                                </div>
+                                <div class="skv">
+                                    <span class="skv l">After Effects</span>
+                                    <span class="skv v" id="settings-ae-version">—</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="stc">
+                            <header class="stc hd">
+                                <h3>Appearance</h3>
+                            </header>
+                            <div class="stc bd">
+                                <div class="sbk">
+                                    <label class="slb" for="accent-color">Accent</label>
+                                    <div class="as" id="accent-swatches">
+                                        <button type="button" class="asi active" data-color="#d4a853" title="Gold"></button>
+                                        <button type="button" class="asi" data-color="#8ab4d9" title="Blue"></button>
+                                        <button type="button" class="asi" data-color="#9fd4a0" title="Green"></button>
+                                        <button type="button" class="asi" data-color="#d48a8a" title="Rose"></button>
+                                        <button type="button" class="asi" data-color="#c4b5fd" title="Violet"></button>
+                                        <input type="color" id="accent-color" value="#d4a853" class="apk" title="Custom color">
+                                        <button type="button" class="btn ico rb" id="rainbow-mode-btn" title="Rainbow accent">◐</button>
+                                    </div>
+                                </div>
+                                <div class="sbk">
+                                    <div class="sr">
+                                        <label class="slb" for="animation-speed">UI speed</label>
+                                        <span class="rd" id="animation-speed-label">1.0×</span>
+                                    </div>
+                                    <input type="range" id="animation-speed" class="rng" min="0.5" max="2" step="0.1" value="1">
+                                </div>
+                                <div class="sbk sr">
+                                    <div>
+                                        <span class="slb">Auto-save</span>
+                                        <span class="sds">Save when you change a setting</span>
+                                    </div>
+                                    <label class="tg">
+                                        <input type="checkbox" id="auto-save-settings" checked>
+                                        <span class="tt"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="stc">
+                            <header class="stc hd">
+                                <h3>Files</h3>
+                            </header>
+                            <div class="stc bd">
+                                <p class="stp" id="worflow-folder-path">~/Documents/WorFlow</p>
+                                <p class="sds">Subfolders are created only when you save settings, import presets, or use assets.</p>
+                                <button type="button" class="btn wrk st" id="open-worflow-folder-btn">Open folder</button>
+                            </div>
+                        </section>
+
+                        <section class="stc">
+                            <header class="stc hd">
+                                <h3>Preferences</h3>
+                            </header>
+                            <div class="stc bd sta">
+                                <button type="button" class="btn wrk st" id="export-settings-btn">Export JSON</button>
+                                <button type="button" class="btn wrk st" id="import-settings-btn">Import JSON</button>
+                                <input type="file" id="settings-import-input" accept=".json,application/json" hidden>
+                            </div>
+                        </section>
+
+                        <section class="stc sab">
+                            <button type="button" class="btn wrk cr" id="credits-btn">Credits</button>
+                        </section>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="cv" id="credits-overlay">
+        <div class="cm">
+            <div class="crh">
+                <h2>Credits</h2>
+                <button class="btn x" id="credits-close-btn">&times;</button>
+            </div>
+            <div class="cb">
+                <div class="cs c1">
+                    <p class="crn">BiBi</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ov" id="onboarding-overlay">
+        <div class="omd">
+            <div class="ohd">
+                <h2>Welcome to Wor Flow</h2>
+                <p>Your After Effects sidekick</p>
+            </div>
+
+            <div class="ocn">
+                <div class="ost active" data-step="1">
+                    <div class="sic">1</div>
+                    <h3>Effect Presets</h3>
+                    <p>One-click presets for glow, blur, color grades, transitions, and more.</p>
+                </div>
+
+                <div class="ost" data-step="2">
+                    <div class="sic">2</div>
+                    <h3>Graph Curves</h3>
+                    <p>Apply easing curves to selected keyframes — linear, ease, expo, speed ramps.</p>
+                </div>
+
+                <div class="ost" data-step="3">
+                    <div class="sic">3</div>
+                    <h3>Assets &amp; SFX</h3>
+                    <p>Drop in media, browse sounds, and import straight into your comp.</p>
+                </div>
+
+                <div class="ost" data-step="4">
+                    <div class="sic">4</div>
+                    <h3>You're set</h3>
+                    <p>Pick a tab and start working. Quick Tools has the layer shortcuts.</p>
+                </div>
+            </div>
+
+            <div class="onv">
+                <button class="btn ob" id="onboarding-prev" disabled>Previous</button>
+                <div class="ods">
+                    <span class="d active" data-step="1"></span>
+                    <span class="d" data-step="2"></span>
+                    <span class="d" data-step="3"></span>
+                    <span class="d" data-step="4"></span>
+                </div>
+                <button class="btn ob" id="onboarding-next">Next</button>
+            </div>
+
+            <div class="oft">
+                <label class="och">
+                    <input type="checkbox" id="dont-show-again">
+                    <span>Don't show this again</span>
+                </label>
+                <button class="btn ob primary" id="onboarding-finish" style="display: none;">Get Started</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/libs/CSInterface.js"></script>
+    <script src="js/json2.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
