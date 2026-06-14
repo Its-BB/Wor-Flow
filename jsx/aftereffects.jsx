@@ -1528,3 +1528,1527 @@ function saveUserUid(jsonData) {
         });
     }
 }
+
+function getSavedUserUid() {
+    try {
+        var documentsPath = WorFlow.getDocumentsPath();
+        var worFlowPath = documentsPath + "/WorFlow";
+        var uidFile = new File(worFlowPath + "/user_uid.json");
+
+        if (uidFile.exists) {
+            uidFile.open("r");
+            var jsonData = uidFile.read();
+            uidFile.close();
+
+            var userData = JSON.parse(jsonData);
+            return JSON.stringify({
+                success: true,
+                uid: userData.uid
+            });
+        } else {
+            return JSON.stringify({
+                success: false,
+                error: "UID file not found"
+            });
+        }
+    } catch (e) {
+        return JSON.stringify({
+            success: false,
+            error: e.toString()
+        });
+    }
+}
+
+function getPresetContent(presetName) {
+    try {
+        var documentsFolder = Folder.userData;
+        if (!documentsFolder) {
+            documentsFolder = Folder(Folder.desktop);
+        }
+
+        var worFlowFolder = new Folder(documentsFolder + "/WorFlow");
+        if (!worFlowFolder.exists) {
+            return JSON.stringify({
+                success: false,
+                error: "WorFlow folder not found"
+            });
+        }
+        
+        var presetsFolder = new Folder(worFlowFolder + "/Presets");
+        if (!presetsFolder.exists) {
+            return JSON.stringify({
+                success: false,
+                error: "Presets folder not found"
+            });
+        }
+
+        var presetFile = new File(presetsFolder + "/" + presetName);
+        if (!presetFile.exists) {
+            return JSON.stringify({
+                success: false,
+                error: "Preset file not found"
+            });
+        }
+
+        if (presetFile.open("r")) {
+            var content = presetFile.read();
+            presetFile.close();
+
+            var presetData = JSON.parse(content);
+            return JSON.stringify(presetData);
+        } else {
+            return JSON.stringify({
+                success: false,
+                error: "Could not open preset file"
+            });
+        }
+    } catch (error) {
+        return JSON.stringify({
+            success: false,
+            error: error.toString()
+        });
+    }
+}
+
+function precomposeSelectedLayers() {
+    app.beginUndoGroup("Pre-compose Selected Layers");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length === 0) {
+            return JSON.stringify({ success: false, error: "No layers selected" });
+        }
+        
+        var indices = [];
+        for (var i = 1; i <= comp.numLayers; i++) {
+            if (comp.layer(i).selected) {
+                indices.push(i);
+            }
+        }
+        
+        var precompName = "Precomp " + new Date().getTime();
+        comp.layers.precompose(indices, precompName, true);
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Layers pre-composed successfully" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function createNullObject() {
+    app.beginUndoGroup("Create Null Object");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        var nullLayer = comp.layers.addNull();
+        nullLayer.name = "Null " + comp.numLayers;
+        nullLayer.label = 1;
+        
+        if (selectedLayers.length > 0) {
+            var targetLayer = selectedLayers[0];
+            nullLayer.moveBefore(targetLayer);
+            nullLayer.startTime = targetLayer.inPoint;
+            nullLayer.inPoint = targetLayer.inPoint;
+            nullLayer.outPoint = targetLayer.outPoint;
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Null object created" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function createSolidLayer() {
+    app.beginUndoGroup("Create Solid Layer");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var defaultColor = [0.2, 0.2, 0.2];
+        var pickedColor = $.colorPicker(defaultColor[0] * 255 * 65536 + defaultColor[1] * 255 * 256 + defaultColor[2] * 255);
+        
+        if (pickedColor === -1) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "Color selection cancelled" });
+        }
+        
+        var r = ((pickedColor >> 16) & 0xFF) / 255;
+        var g = ((pickedColor >> 8) & 0xFF) / 255;
+        var b = (pickedColor & 0xFF) / 255;
+        var solidColor = [r, g, b];
+        
+        var selectedLayers = comp.selectedLayers;
+        var duration = comp.duration;
+        
+        if (selectedLayers.length > 0) {
+            duration = selectedLayers[0].outPoint - selectedLayers[0].inPoint;
+        }
+        
+        var solidLayer = comp.layers.addSolid(solidColor, "Solid " + comp.numLayers, comp.width, comp.height, comp.pixelAspect, duration);
+        
+        if (selectedLayers.length > 0) {
+            var targetLayer = selectedLayers[0];
+            solidLayer.moveBefore(targetLayer);
+            solidLayer.startTime = targetLayer.inPoint;
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Solid layer created" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function createAdjustmentLayer() {
+    app.beginUndoGroup("Create Adjustment Layer");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        var duration = comp.duration;
+        
+        if (selectedLayers.length > 0) {
+            duration = selectedLayers[0].outPoint - selectedLayers[0].inPoint;
+        }
+        
+        var adjustmentLayer = comp.layers.addSolid([1, 1, 1], "Adjustment Layer", comp.width, comp.height, comp.pixelAspect, duration);
+        adjustmentLayer.adjustmentLayer = true;
+        adjustmentLayer.label = 5;
+        
+        if (selectedLayers.length > 0) {
+            var targetLayer = selectedLayers[0];
+            adjustmentLayer.moveBefore(targetLayer);
+            adjustmentLayer.startTime = targetLayer.inPoint;
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Adjustment layer created" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function createCamera() {
+    app.beginUndoGroup("Create Camera");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        var cameraLayer = comp.layers.addCamera("Camera " + comp.numLayers, [comp.width/2, comp.height/2]);
+        cameraLayer.label = 4;
+        
+        if (selectedLayers.length > 0) {
+            var targetLayer = selectedLayers[0];
+            cameraLayer.moveBefore(targetLayer);
+            cameraLayer.startTime = targetLayer.inPoint;
+            cameraLayer.inPoint = targetLayer.inPoint;
+            cameraLayer.outPoint = targetLayer.outPoint;
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Camera created" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function createLight() {
+    app.beginUndoGroup("Create Light");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        var lightLayer = comp.layers.addLight("Light " + comp.numLayers, [comp.width/2, comp.height/2]);
+        lightLayer.label = 6;
+        
+        if (selectedLayers.length > 0) {
+            var targetLayer = selectedLayers[0];
+            lightLayer.moveBefore(targetLayer);
+            lightLayer.startTime = targetLayer.inPoint;
+            lightLayer.inPoint = targetLayer.inPoint;
+            lightLayer.outPoint = targetLayer.outPoint;
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Light created" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function enableTimeRemapping() {
+    app.beginUndoGroup("Enable Time Remapping");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length === 0) {
+            return JSON.stringify({ success: false, error: "No layers selected" });
+        }
+        
+        for (var i = 0; i < selectedLayers.length; i++) {
+            var layer = selectedLayers[i];
+            if (layer.canSetTimeRemapEnabled) {
+                layer.timeRemapEnabled = true;
+            }
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Time remapping enabled on " + selectedLayers.length + " layer(s)" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function reverseLayerTime() {
+    app.beginUndoGroup("Reverse Layer Time");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length === 0) {
+            return JSON.stringify({ success: false, error: "No layers selected" });
+        }
+        
+        for (var i = 0; i < selectedLayers.length; i++) {
+            var layer = selectedLayers[i];
+            if (layer.canSetTimeRemapEnabled) {
+                layer.timeRemapEnabled = true;
+                var timeRemap = layer.property("ADBE Time Remapping");
+                while (timeRemap.numKeys > 0) {
+                    timeRemap.removeKey(1);
+                }
+                var layerDuration = layer.outPoint - layer.inPoint;
+                timeRemap.setValueAtTime(layer.inPoint, layerDuration);
+                timeRemap.setValueAtTime(layer.outPoint, 0);
+            }
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Time reversed on " + selectedLayers.length + " layer(s)" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function freezeFrame() {
+    app.beginUndoGroup("Freeze Frame");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length === 0) {
+            return JSON.stringify({ success: false, error: "No layers selected" });
+        }
+        
+        var currentTime = comp.time;
+        for (var i = 0; i < selectedLayers.length; i++) {
+            var layer = selectedLayers[i];
+            if (layer.canSetTimeRemapEnabled) {
+                layer.timeRemapEnabled = true;
+                var timeRemap = layer.property("ADBE Time Remapping");
+                var freezeTime = currentTime - layer.inPoint;
+                timeRemap.setValue(freezeTime);
+            }
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Freeze frame applied to " + selectedLayers.length + " layer(s)" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function adjustLayerSpeed(speedPercent) {
+    app.beginUndoGroup("Adjust Layer Speed");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length === 0) {
+            return JSON.stringify({ success: false, error: "No layers selected" });
+        }
+        
+        var speedMultiplier = speedPercent / 100;
+        for (var i = 0; i < selectedLayers.length; i++) {
+            var layer = selectedLayers[i];
+            if (layer.canSetTimeRemapEnabled) {
+                layer.timeRemapEnabled = true;
+                var timeRemap = layer.property("ADBE Time Remapping");
+                while (timeRemap.numKeys > 0) {
+                    timeRemap.removeKey(1);
+                }
+                var layerDuration = layer.outPoint - layer.inPoint;
+                var newDuration = layerDuration / speedMultiplier;
+                timeRemap.setValueAtTime(layer.inPoint, 0);
+                timeRemap.setValueAtTime(layer.inPoint + newDuration, layerDuration);
+                layer.outPoint = layer.inPoint + newDuration;
+            }
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Speed adjusted to " + speedPercent + "% on " + selectedLayers.length + " layer(s)" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function trimCompToWorkArea() {
+    app.beginUndoGroup("Trim Comp to Work Area");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var workAreaStart = comp.workAreaStart;
+        var workAreaDuration = comp.workAreaDuration;
+        for (var i = 1; i <= comp.numLayers; i++) {
+            var layer = comp.layer(i);
+            layer.startTime = layer.startTime - workAreaStart;
+        }
+        comp.duration = workAreaDuration;
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Composition trimmed to work area" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function centerAnchorPoint() {
+    app.beginUndoGroup("Center Anchor Point");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length === 0) {
+            return JSON.stringify({ success: false, error: "No layers selected" });
+        }
+        
+        for (var i = 0; i < selectedLayers.length; i++) {
+            var layer = selectedLayers[i];
+            var layerRect = layer.sourceRectAtTime(comp.time, false);
+            var anchorPoint = layer.property("ADBE Transform Group").property("ADBE Anchor Point");
+            var position = layer.property("ADBE Transform Group").property("ADBE Position");
+            var oldAnchor = anchorPoint.value;
+            var newAnchor = [layerRect.left + layerRect.width / 2, layerRect.top + layerRect.height / 2];
+            anchorPoint.setValue(newAnchor);
+            var anchorDelta = [newAnchor[0] - oldAnchor[0], newAnchor[1] - oldAnchor[1]];
+            var oldPosition = position.value;
+            position.setValue([oldPosition[0] + anchorDelta[0], oldPosition[1] + anchorDelta[1]]);
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Anchor point centered on " + selectedLayers.length + " layer(s)" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function fitLayerToComp() {
+    app.beginUndoGroup("Fit Layer to Comp");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length === 0) {
+            return JSON.stringify({ success: false, error: "No layers selected" });
+        }
+        
+        for (var i = 0; i < selectedLayers.length; i++) {
+            var layer = selectedLayers[i];
+            if (layer.source) {
+                var scaleX = (comp.width / layer.source.width) * 100;
+                var scaleY = (comp.height / layer.source.height) * 100;
+                var scale = Math.max(scaleX, scaleY);
+                var scaleProperty = layer.property("ADBE Transform Group").property("ADBE Scale");
+                scaleProperty.setValue([scale, scale]);
+                var position = layer.property("ADBE Transform Group").property("ADBE Position");
+                position.setValue([comp.width / 2, comp.height / 2]);
+            }
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Layer(s) fitted to composition" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function duplicateSelectedLayers() {
+    app.beginUndoGroup("Duplicate Selected Layers");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length === 0) {
+            return JSON.stringify({ success: false, error: "No layers selected" });
+        }
+        
+        for (var i = 0; i < selectedLayers.length; i++) {
+            selectedLayers[i].duplicate();
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: selectedLayers.length + " layer(s) duplicated" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function splitLayerAtCurrentTime() {
+    app.beginUndoGroup("Split Layer");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length === 0) {
+            return JSON.stringify({ success: false, error: "No layers selected" });
+        }
+        
+        var currentTime = comp.time;
+        var splitCount = 0;
+        for (var i = 0; i < selectedLayers.length; i++) {
+            var layer = selectedLayers[i];
+            if (currentTime > layer.inPoint && currentTime < layer.outPoint) {
+                var newLayer = layer.duplicate();
+                layer.outPoint = currentTime;
+                newLayer.inPoint = currentTime;
+                splitCount++;
+            }
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: splitCount + " layer(s) split at current time" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function sequenceLayers() {
+    app.beginUndoGroup("Sequence Layers");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedLayers = comp.selectedLayers;
+        if (selectedLayers.length < 2) {
+            return JSON.stringify({ success: false, error: "Select at least 2 layers to sequence" });
+        }
+        
+        selectedLayers.sort(function(a, b) {
+            return a.index - b.index;
+        });
+        
+        var currentTime = comp.time;
+        for (var i = 0; i < selectedLayers.length; i++) {
+            var layer = selectedLayers[i];
+            var layerDuration = layer.outPoint - layer.inPoint;
+            layer.startTime = currentTime;
+            currentTime += layerDuration;
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: selectedLayers.length + " layers sequenced" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyGraphCurve(curveDataStr) {
+    app.beginUndoGroup("Apply Graph Curve");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedProperties = comp.selectedProperties;
+        if (selectedProperties.length === 0) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "Select a property in the timeline" });
+        }
+        
+        var property = selectedProperties[0];
+        
+        if (!property.canVaryOverTime) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "This property cannot be animated" });
+        }
+        
+        if (!property.selectedKeys || property.selectedKeys.length === 0) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "Select keyframes in the timeline" });
+        }
+        
+        var curveData = JSON.parse(curveDataStr);
+        var cp1 = curveData.controlPoint1;
+        var cp2 = curveData.controlPoint2;
+        
+        var influenceOut = Math.max(0.1, cp1.x);
+        var speedOut = Math.max(0, cp1.y);
+        
+        var influenceIn = Math.max(0.1, cp2.x);
+        var speedIn = Math.max(0, cp2.y);
+        
+        var selectedKeyframes = property.selectedKeys;
+        var keyframesApplied = 0;
+        
+        for (var i = 0; i < selectedKeyframes.length; i++) {
+            var keyIndex = selectedKeyframes[i];
+            try {
+                property.setInterpolationTypeAtKey(keyIndex, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+                
+                var easeIn = new KeyframeEase(speedIn, influenceIn);
+                var easeOut = new KeyframeEase(speedOut, influenceOut);
+                
+                switch (property.propertyValueType) {
+                    case 6414: 
+                        property.setTemporalEaseAtKey(keyIndex, [easeIn, easeIn, easeIn], [easeOut, easeOut, easeOut]);
+                        break;
+                    case 6416: 
+                        property.setTemporalEaseAtKey(keyIndex, [easeIn, easeIn], [easeOut, easeOut]);
+                        break;
+                    case 6417:
+                    case 6413:
+                    default:
+                        property.setTemporalEaseAtKey(keyIndex, [easeIn], [easeOut]);
+                        break;
+                }
+                
+                keyframesApplied++;
+            } catch (keyError) {
+                continue;
+            }
+        }
+        
+        app.endUndoGroup();
+        
+        if (keyframesApplied === 0) {
+            return JSON.stringify({ 
+                success: false, 
+                error: "Could not apply curve to any keyframes" 
+            });
+        }
+        
+        return JSON.stringify({ 
+            success: true, 
+            message: "Curve applied to " + keyframesApplied + " keyframe(s)",
+            keyframesApplied: keyframesApplied,
+            selectedKeyframes: selectedKeyframes.length,
+            propertyName: property.name
+        });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyTemporalEaseAtKey(property, keyIndex, influenceIn, influenceOut, speedIn, speedOut) {
+    property.setInterpolationTypeAtKey(keyIndex, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+    var easeIn = new KeyframeEase(speedIn || 0, influenceIn);
+    var easeOut = new KeyframeEase(speedOut || 0, influenceOut);
+    switch (property.propertyValueType) {
+        case 6414:
+            property.setTemporalEaseAtKey(keyIndex, [easeIn, easeIn, easeIn], [easeOut, easeOut, easeOut]);
+            break;
+        case 6416:
+            property.setTemporalEaseAtKey(keyIndex, [easeIn, easeIn], [easeOut, easeOut]);
+            break;
+        default:
+            property.setTemporalEaseAtKey(keyIndex, [easeIn], [easeOut]);
+            break;
+    }
+}
+
+function getGraphPresetEase(presetType) {
+    switch (presetType) {
+        case 'linear':
+            return { influenceIn: 0.1, influenceOut: 0.1, speedIn: 0, speedOut: 0 };
+        case 'ease-in':
+            return { influenceIn: 75, influenceOut: 33.33, speedIn: 0, speedOut: 0 };
+        case 'ease-out':
+            return { influenceIn: 33.33, influenceOut: 75, speedIn: 0, speedOut: 0 };
+        case 'ease-in-out':
+            return { influenceIn: 75, influenceOut: 75, speedIn: 0, speedOut: 0 };
+        case 'smooth':
+            return { influenceIn: 60, influenceOut: 40, speedIn: 0, speedOut: 0 };
+        case 'expo-in':
+            return { influenceIn: 87, influenceOut: 33.33, speedIn: 0, speedOut: 0 };
+        case 'expo-out':
+            return { influenceIn: 33.33, influenceOut: 87, speedIn: 0, speedOut: 0 };
+        case 'speed-ramp':
+            return { influenceIn: 30, influenceOut: 30, speedIn: 10, speedOut: 10.1 };
+        case 'quad-in':
+            return { influenceIn: 50, influenceOut: 25, speedIn: 0, speedOut: 0 };
+        case 'quad-out':
+            return { influenceIn: 25, influenceOut: 50, speedIn: 0, speedOut: 0 };
+        case 'cubic-in':
+            return { influenceIn: 65, influenceOut: 30, speedIn: 0, speedOut: 0 };
+        case 'cubic-out':
+            return { influenceIn: 30, influenceOut: 65, speedIn: 0, speedOut: 0 };
+        default:
+            return null;
+    }
+}
+
+function applyGraphPreset(presetType) {
+    app.beginUndoGroup("Apply Graph Preset");
+    try {
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        
+        var selectedProperties = comp.selectedProperties;
+        if (!selectedProperties || selectedProperties.length === 0) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "Select a property in the timeline" });
+        }
+        
+        var property = selectedProperties[0];
+        
+        if (!property.canVaryOverTime) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "This property cannot be animated" });
+        }
+        
+        if (property.numKeys < 1) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "Add at least one keyframe" });
+        }
+        
+        var ease = getGraphPresetEase(presetType);
+        if (!ease) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "Unknown preset: " + presetType });
+        }
+        
+        var selectedKeys = property.selectedKeys;
+        var keysToApply = selectedKeys && selectedKeys.length > 0 ? selectedKeys.slice(0) : [];
+        
+        if (keysToApply.length === 0) {
+            for (var j = 1; j <= property.numKeys; j++) {
+                keysToApply.push(j);
+            }
+        }
+        
+        var keyframesApplied = 0;
+        
+        for (var idx = 0; idx < keysToApply.length; idx++) {
+            var i = keysToApply[idx];
+            try {
+                applyTemporalEaseAtKey(property, i, ease.influenceIn, ease.influenceOut, ease.speedIn, ease.speedOut);
+                keyframesApplied++;
+            } catch (keyError) {
+                continue;
+            }
+        }
+        
+        app.endUndoGroup();
+        
+        if (keyframesApplied === 0) {
+            return JSON.stringify({ success: false, error: "Could not apply curve to keyframes" });
+        }
+        
+        return JSON.stringify({ 
+            success: true, 
+            message: presetType + " applied to " + keyframesApplied + " keyframe(s)",
+            keyframesApplied: keyframesApplied
+        });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyGlowEffect() {
+    try {
+        app.beginUndoGroup("Apply Glow");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        
+        function clampLayerTiming(targetLayer, sourceLayer) {
+            targetLayer.startTime = sourceLayer.startTime;
+            targetLayer.inPoint = sourceLayer.inPoint;
+            targetLayer.outPoint = sourceLayer.outPoint;
+        }
+
+        function addGaussianBlur(targetLayer, amount) {
+            var blur = targetLayer.Effects.addProperty("ADBE Gaussian Blur 2");
+            if (blur) {
+                blur("ADBE Gaussian Blur 2-0001").setValue(amount);
+                blur("ADBE Gaussian Blur 2-0002").setValue(2);
+            }
+        }
+
+        function isolateHighlights(targetLayer, blackPoint, whitePoint) {
+            var extract = targetLayer.Effects.addProperty("ADBE Extract");
+            if (extract) {
+                extract("ADBE Extract-0001").setValue(blackPoint);
+                extract("ADBE Extract-0002").setValue(whitePoint);
+                extract("ADBE Extract-0005").setValue(0);
+            }
+        }
+
+        var baseGlow = layer.duplicate();
+        baseGlow.moveBefore(layer);
+        baseGlow.name = layer.name + " - Glow Base";
+        clampLayerTiming(baseGlow, layer);
+        baseGlow.blendingMode = BlendingMode.ADD;
+        var baseOpacity = baseGlow.property("ADBE Transform Group").property("ADBE Opacity");
+        baseOpacity.setValue(60);
+        isolateHighlights(baseGlow, 190, 255);
+        addGaussianBlur(baseGlow, 45);
+
+        var detailGlow = baseGlow.duplicate();
+        detailGlow.name = layer.name + " - Glow Detail";
+        clampLayerTiming(detailGlow, layer);
+        detailGlow.blendingMode = BlendingMode.SCREEN;
+        detailGlow.property("ADBE Transform Group").property("ADBE Opacity").setValue(45);
+        addGaussianBlur(detailGlow, 18);
+
+        var glowEffect = detailGlow.Effects.addProperty("ADBE Glow2");
+        if (glowEffect) {
+            glowEffect("ADBE Glow-0002").setValue(55);
+            glowEffect("ADBE Glow-0003").setValue(0.6);
+            glowEffect("ADBE Glow-0008").setValue(40);
+        }
+
+        var tint = detailGlow.Effects.addProperty("ADBE Tritone");
+        if (tint) {
+            tint("ADBE Tritone-0003").setValue([1, 0.84, 0.7]);
+            tint("ADBE Tritone-0004").setValue([1, 0.96, 0.88]);
+            tint("ADBE Tritone-0005").setValue([0.92, 0.96, 1]);
+            tint("ADBE Tritone-0001").setValue(28);
+        }
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Glow effect applied" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyGaussianBlur() {
+    try {
+        app.beginUndoGroup("Apply Gaussian Blur");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Gaussian Blur 2");
+        if (effect) {
+            effect("ADBE Gaussian Blur 2-0001").setValue(30);
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Gaussian blur applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply blur" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applySharpEffect() {
+    try {
+        app.beginUndoGroup("Apply Sharpen");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        
+        var effect = layer.Effects.addProperty("ADBE Unsharp Mask");
+        if (effect) {
+            effect("ADBE Unsharp Mask-0001").setValue(2.0);
+            effect("ADBE Unsharp Mask-0002").setValue(1.0);
+            effect("ADBE Unsharp Mask-0003").setValue(0);
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Sharpen effect applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply sharpen" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyFlashEffect() {
+    try {
+        app.beginUndoGroup("Apply Flash");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        
+        var frameRate = comp.frameRate;
+        var frameDuration = 1 / frameRate;
+        var flashDuration = 7 * frameDuration;
+        
+        var solidLayer = comp.layers.addSolid([1, 1, 1], "Flash", comp.width, comp.height, comp.pixelAspect, flashDuration);
+        solidLayer.moveBefore(layer);
+        solidLayer.startTime = layer.inPoint;
+                
+        var opacity = solidLayer.property("ADBE Transform Group").property("ADBE Opacity");
+        
+        while (opacity.numKeys > 0) {
+            opacity.removeKey(1);
+        }
+        
+        var startTime = layer.inPoint;
+        var endTime = startTime + flashDuration;
+        
+        opacity.setValueAtTime(startTime, 100);
+        opacity.setValueAtTime(endTime, 0);
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Flash effect applied" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyCameraShake() {
+    try {
+        app.beginUndoGroup("Apply Camera Shake");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        
+        var transform = layer.property("ADBE Transform Group");
+        var position = transform.property("ADBE Position");
+        
+        while (position.numKeys > 0) {
+            position.removeKey(1);
+        }
+        
+        var frameRate = comp.frameRate;
+        var frameDuration = 1 / frameRate;
+        var shakeAmount = 10;
+        var numShakes = 8;
+        
+        var startTime = layer.inPoint;
+        var originalPos = position.value;
+        
+        for (var i = 0; i < numShakes; i++) {
+            var time = startTime + (i * frameDuration);
+            var offsetX = (Math.random() - 0.5) * shakeAmount * 2;
+            var offsetY = (Math.random() - 0.5) * shakeAmount * 2;
+            var newPos = [originalPos[0] + offsetX, originalPos[1] + offsetY];
+            position.setValueAtTime(time, newPos);
+        }
+        
+        position.setValueAtTime(startTime + (8 * frameDuration), originalPos);
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Camera shake applied" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyWaveWarp() {
+    try {
+        app.beginUndoGroup("Apply Wave Warp");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Wave Warp");
+        if (effect) {
+            effect("ADBE Wave Warp-0001")("Wave Height").setValue(10);
+            effect("ADBE Wave Warp-0001")("Wave Width").setValue(50);
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Wave warp applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply wave warp" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyTurbulentDisplace() {
+    try {
+        app.beginUndoGroup("Apply Turbulent Displace");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Turbulent Displace");
+        if (effect) {
+            effect("ADBE Turbulent Displace-0001")("Displacement").setValue(20);
+            effect("ADBE Turbulent Displace-0001")("Complexity").setValue(3);
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Turbulent displace applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply turbulent displace" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyMirror() {
+    try {
+        app.beginUndoGroup("Apply Mirror");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Mirror");
+        if (effect) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Mirror applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply mirror" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyPolarCoordinates() {
+    try {
+        app.beginUndoGroup("Apply Polar Coordinates");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Polar Coordinates");
+        if (effect) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Polar coordinates applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply polar coordinates" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyTwirl() {
+    try {
+        app.beginUndoGroup("Apply Twirl");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Twirl");
+        if (effect) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Twirl applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply twirl" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyBulge() {
+    try {
+        app.beginUndoGroup("Apply Bulge");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Bulge");
+        if (effect) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Bulge applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply bulge" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyRipple() {
+    try {
+        app.beginUndoGroup("Apply Ripple");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Ripple");
+        if (effect) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Ripple applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply ripple" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applySpherize() {
+    try {
+        app.beginUndoGroup("Apply Spherize");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Spherize");
+        if (effect) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Spherize applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply spherize" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyFractalNoise() {
+    try {
+        app.beginUndoGroup("Apply Fractal Noise");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Fractal Noise");
+        if (effect) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Fractal noise applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply fractal noise" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyLensFlare() {
+    try {
+        app.beginUndoGroup("Apply Lens Flare");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Lens Flare");
+        if (effect) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Lens flare applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply lens flare" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyVintageFilm() {
+    app.beginUndoGroup("Apply Vintage Film");
+    try {
+        return WorFlow.applyFFXPreset("vintage.ffx");
+    } catch (e) {
+        app.endUndoGroup();
+        return WorFlow.stringifyJSON({ success: false, error: e.toString() });
+    }
+}
+
+function applyCinematicGrade() {
+    app.beginUndoGroup("Apply Cinematic");
+    try {
+        return WorFlow.applyFFXPreset("cinematic.ffx");
+    } catch (e) {
+        app.endUndoGroup();
+        return WorFlow.stringifyJSON({ success: false, error: e.toString() });
+    }
+}
+
+function applyQualityCC() {
+    app.beginUndoGroup("Apply Quality CC");
+    try {
+        return WorFlow.applyFFXPreset("quality.ffx");
+    } catch (e) {
+        app.endUndoGroup();
+        return WorFlow.stringifyJSON({ success: false, error: e.toString() });
+    }
+}
+
+function applyFadeTransition() {
+    try {
+        app.beginUndoGroup("Apply Fade Transition");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var opacityProp = layer.transform.opacity;
+        
+        while (opacityProp.numKeys > 0) {
+            opacityProp.removeKey(1);
+        }
+        
+        // Use layer's actual in and out points
+        var layerInPoint = layer.inPoint;
+        var layerOutPoint = layer.outPoint;
+        var layerDuration = layerOutPoint - layerInPoint;
+        
+        // Divide duration into 3 equal parts: fade in, hold, fade out
+        var fadeInDuration = layerDuration / 3;
+        var holdDuration = layerDuration / 3;
+        var fadeOutDuration = layerDuration / 3;
+        
+        var fadeInEndTime = layerInPoint + fadeInDuration;
+        var holdEndTime = fadeInEndTime + holdDuration;
+        var fadeOutEndTime = holdEndTime + fadeOutDuration;
+        
+        // Set keyframes at exact layer points
+        opacityProp.setValueAtTime(layerInPoint, 0);
+        opacityProp.setValueAtTime(fadeInEndTime, 100);
+        opacityProp.setValueAtTime(holdEndTime, 100);
+        opacityProp.setValueAtTime(fadeOutEndTime, 0);
+        
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Fade transition applied" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyWipeTransition() {
+    try {
+        app.beginUndoGroup("Apply Wipe Transition");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var effect = layer.Effects.addProperty("ADBE Linear Wipe");
+        if (effect) {
+            var completionProp = effect.property("ADBE Linear Wipe-0001");
+            var featherProp = effect.property("ADBE Linear Wipe-0003");
+
+            featherProp.setValue(20);
+
+            while (completionProp.numKeys > 0) {
+                completionProp.removeKey(1);
+            }
+
+            var startTime = layer.inPoint;
+            var duration = Math.min(0.6, layer.outPoint - layer.inPoint);
+            var endTime = startTime + duration;
+
+            completionProp.setValueAtTime(startTime, 100);
+            completionProp.setValueAtTime(endTime, 0);
+
+            completionProp.setInterpolationTypeAtKey(1, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+            completionProp.setInterpolationTypeAtKey(2, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+
+            var easeOut = new KeyframeEase(0, 60);
+            var easeIn = new KeyframeEase(0, 60);
+            completionProp.setTemporalEaseAtKey(1, [easeOut], [easeOut]);
+            completionProp.setTemporalEaseAtKey(2, [easeIn], [easeIn]);
+
+            app.endUndoGroup();
+            return JSON.stringify({ success: true, message: "Wipe transition applied" });
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: "Could not apply wipe" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applyZoomTransition() {
+    try {
+        app.beginUndoGroup("Apply Zoom Transition");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var scaleProp = layer.transform.scale;
+
+        var referenceTime = Math.min(Math.max(comp.time, layer.inPoint), layer.outPoint);
+        var startScale = scaleProp.valueAtTime(referenceTime, true);
+        if (!(startScale instanceof Array)) {
+            startScale = [startScale, startScale];
+        }
+        var startScaleCopy = [];
+        for (var s = 0; s < startScale.length; s++) {
+            startScaleCopy.push(startScale[s]);
+        }
+
+        while (scaleProp.numKeys > 0) {
+            scaleProp.removeKey(1);
+        }
+
+        function scaleArray(values, factor) {
+            var result = [];
+            for (var i = 0; i < values.length; i++) {
+                result.push(values[i] * factor);
+            }
+            return result;
+        }
+
+        var duration = Math.min(0.4, layer.outPoint - referenceTime);
+        if (duration <= 0) {
+            duration = 0.2;
+            referenceTime = Math.max(layer.inPoint, layer.outPoint - duration);
+        }
+        var midTime = referenceTime + duration / 2;
+        var endTime = referenceTime + duration;
+
+        var zoomFactor = 1.2;
+        var midScale = scaleArray(startScaleCopy, zoomFactor);
+
+        scaleProp.setValueAtTime(referenceTime, startScaleCopy);
+        scaleProp.setValueAtTime(midTime, midScale);
+        scaleProp.setValueAtTime(endTime, startScaleCopy);
+
+        for (var k = 1; k <= scaleProp.numKeys; k++) {
+            scaleProp.setInterpolationTypeAtKey(k, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+            scaleProp.setTemporalEaseAtKey(k, [new KeyframeEase(0, 60)], [new KeyframeEase(0, 60)]);
+        }
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Zoom transition applied" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
+
+function applySpinTransition() {
+    try {
+        app.beginUndoGroup("Apply Spin Transition");
+        var comp = app.project.activeItem;
+        if (!comp || !(comp instanceof CompItem)) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No active composition" });
+        }
+        var layer = comp.selectedLayers[0];
+        if (!layer) {
+            app.endUndoGroup();
+            return JSON.stringify({ success: false, error: "No selected layer" });
+        }
+        var rotationProp = layer.transform.rotation;
+        var scaleProp = layer.transform.scale;
+
+        while (rotationProp.numKeys > 0) {
+            rotationProp.removeKey(1);
+        }
+        while (scaleProp.numKeys > 0) {
+            scaleProp.removeKey(1);
+        }
+
+        var startTime = comp.time;
+        var endTime = startTime + (15 / comp.frameRate);
+
+        rotationProp.setValueAtTime(startTime, 0);
+        rotationProp.setValueAtTime(endTime, 360);
+        rotationProp.setInterpolationTypeAtKey(1, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+        rotationProp.setInterpolationTypeAtKey(2, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+        rotationProp.setTemporalEaseAtKey(1, [new KeyframeEase(0, 70)], [new KeyframeEase(0, 70)]);
+        rotationProp.setTemporalEaseAtKey(2, [new KeyframeEase(0, 70)], [new KeyframeEase(0, 70)]);
+
+        scaleProp.setValueAtTime(startTime, [80, 80]);
+        scaleProp.setValueAtTime(endTime, [100, 100]);
+        scaleProp.setInterpolationTypeAtKey(1, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+        scaleProp.setInterpolationTypeAtKey(2, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+        scaleProp.setTemporalEaseAtKey(1, [new KeyframeEase(0, 60)], [new KeyframeEase(0, 60)]);
+        scaleProp.setTemporalEaseAtKey(2, [new KeyframeEase(0, 60)], [new KeyframeEase(0, 60)]);
+        app.endUndoGroup();
+        return JSON.stringify({ success: true, message: "Spin transition applied" });
+    } catch (e) {
+        app.endUndoGroup();
+        return JSON.stringify({ success: false, error: e.toString() });
+    }
+}
