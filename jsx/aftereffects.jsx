@@ -1,17 +1,48 @@
 var WorFlow = {
     version: "1.0.0",
+    _cachedExtensionRoot: null,
     
     getDocumentsPath: function() {
         return Folder.myDocuments.fsName;
     },
     
     getExtensionRoot: function() {
+        if (this._cachedExtensionRoot) {
+            var cached = new Folder(this._cachedExtensionRoot);
+            if (cached.exists) return cached;
+            this._cachedExtensionRoot = null;
+        }
         try {
-            var jsxFile = new File($.fileName);
-            if (!jsxFile.exists) return null;
-            return jsxFile.parent.parent;
+            if ($.fileName) {
+                var jsxFile = new File($.fileName);
+                if (jsxFile.exists) {
+                    var root = jsxFile.parent.parent;
+                    if (root && root.exists) {
+                        this._cachedExtensionRoot = root.fsName;
+                        return root;
+                    }
+                }
+            }
+        } catch (e) {}
+        return null;
+    },
+
+    setExtensionRoot: function(path) {
+        try {
+            if (!path) {
+                return this.stringifyJSON({ success: false, error: "No extension path" });
+            }
+            var folder = new Folder(String(path));
+            if (!folder.exists) {
+                folder = new Folder(String(path).replace(/\//g, "\\"));
+            }
+            if (!folder.exists) {
+                return this.stringifyJSON({ success: false, error: "Extension folder not found" });
+            }
+            this._cachedExtensionRoot = folder.fsName;
+            return this.stringifyJSON({ success: true, path: folder.fsName });
         } catch (e) {
-            return null;
+            return this.stringifyJSON({ success: false, error: e.toString() });
         }
     },
 
@@ -1297,6 +1328,10 @@ function writeFileChunk(fileName, hexString, isFirstChunk) {
 
 function getExtensionPath() {
     return WorFlow.getExtensionPath();
+}
+
+function setExtensionRoot(path) {
+    return WorFlow.setExtensionRoot(path);
 }
 
 function getSfxPath() {

@@ -101,10 +101,10 @@ function updateStatus(message, type = 'info') {
     const el = $('status-message');
     if (!el) return;
     const text = el.querySelector('span:last-child');
-    const dot = el.querySelector('.sd');
+    const dot = el.querySelector('.status-dot');
     if (text) text.textContent = message;
     if (dot) {
-        dot.className = 'sd';
+        dot.className = 'status-dot';
         if (type === 'success') dot.classList.add('ok');
         else if (type === 'warning') dot.classList.add('warn');
         else if (type === 'error') dot.classList.add('err');
@@ -115,7 +115,7 @@ function updateStatus(message, type = 'info') {
         updateStatus._timer = setTimeout(() => {
             if (text && text.textContent === message) {
                 text.textContent = 'Ready';
-                if (dot) dot.className = 'sd';
+                if (dot) dot.className = 'status-dot';
             }
         }, 4000);
     }
@@ -123,15 +123,15 @@ function updateStatus(message, type = 'info') {
 
 function showToast(title, message, type = 'info') {
     const toast = document.createElement('div');
-    toast.className = `ts ${type}`;
-    toast.innerHTML = `<div class="th"><span class="tit">${title}</span><button type="button" class="btn x">&times;</button></div><div class="tm">${message}</div>`;
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<div class="toast-header"><span class="toast-title">${title}</span><button type="button" class="toast-close">&times;</button></div><div class="toast-message">${message}</div>`;
     document.body.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add('show'));
     const close = () => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 250);
     };
-    toast.querySelector('.btn.x').addEventListener('click', close);
+    toast.querySelector('.toast-close').addEventListener('click', close);
     setTimeout(close, 4500);
 }
 
@@ -152,7 +152,7 @@ async function initAfterEffects() {
     }
     try {
         const host = csInterface.getHostEnvironment();
-        if (!host || host.aId !== 'AEFT') {
+        if (!host || host.appId !== 'AEFT') {
             updateStatus('Open After Effects first', 'warning');
             return;
         }
@@ -163,10 +163,10 @@ async function initAfterEffects() {
 }
 
 function switchTab(tabName) {
-    document.querySelectorAll('.ni').forEach((link) => {
+    document.querySelectorAll('.nav-link').forEach((link) => {
         link.classList.toggle('active', link.dataset.tab === tabName);
     });
-    document.querySelectorAll('.tb').forEach((tab) => {
+    document.querySelectorAll('.tab-content').forEach((tab) => {
         tab.classList.toggle('active', tab.id === tabName);
     });
     if (tabName === 'assets') setTimeout(initAssetManager, 100);
@@ -177,17 +177,17 @@ function switchTab(tabName) {
 }
 
 function bindNavigation() {
-    document.querySelectorAll('.ni').forEach((link) => {
+    document.querySelectorAll('.nav-link').forEach((link) => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             switchTab(link.dataset.tab);
         });
     });
-    document.querySelectorAll('.psi').forEach((btn) => {
+    document.querySelectorAll('.preset-subtab').forEach((btn) => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.psi').forEach((b) => b.classList.remove('active'));
+            document.querySelectorAll('.preset-subtab').forEach((b) => b.classList.remove('active'));
             btn.classList.add('active');
-            document.querySelectorAll('.psc').forEach((c) => c.classList.remove('active'));
+            document.querySelectorAll('.preset-subtab-content').forEach((c) => c.classList.remove('active'));
             const target = $(btn.dataset.subtab);
             if (target) target.classList.add('active');
         });
@@ -196,10 +196,10 @@ function bindNavigation() {
 }
 
 function bindPreviewSliders() {
-    document.querySelectorAll('.sh').forEach((slider) => {
+    document.querySelectorAll('.slider-handle').forEach((slider) => {
         const update = () => {
-            const wrap = slider.closest('.pvs');
-            const after = wrap?.querySelector('.va');
+            const wrap = slider.closest('.preset-preview-slider');
+            const after = wrap?.querySelector('.preview-after');
             if (after) after.style.clipPath = `inset(0 ${100 - slider.value}% 0 0)`;
         };
         slider.addEventListener('input', update);
@@ -208,9 +208,9 @@ function bindPreviewSliders() {
 }
 
 function bindPresetCards() {
-    document.querySelectorAll('.pc').forEach((card) => {
+    document.querySelectorAll('.preset-card').forEach((card) => {
         const name = card.querySelector('h4')?.textContent?.trim();
-        const btn = card.querySelector('.btn.acti');
+        const btn = card.querySelector('.btn-apply');
         if (btn && name) {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -219,8 +219,8 @@ function bindPresetCards() {
         }
         const previewSrc = card.dataset.preview;
         if (previewSrc) {
-            const preview = card.querySelector('.pv');
-            const img = preview?.querySelector('.vi');
+            const preview = card.querySelector('.preset-preview');
+            const img = preview?.querySelector('.preview-image');
             if (!preview) return;
             const video = document.createElement('video');
             video.src = previewSrc;
@@ -263,7 +263,7 @@ async function applyPresetFromCard(card, name) {
 }
 
 async function applyVisualEffect(name) {
-    const card = Array.from(document.querySelectorAll('.pc')).find(
+    const card = Array.from(document.querySelectorAll('.preset-card')).find(
         (c) => c.querySelector('h4')?.textContent?.trim() === name
     );
     if (card) await applyPresetFromCard(card, name);
@@ -294,19 +294,19 @@ async function addCustomPreset(file) {
     const name = file.name.replace(/\.ffx$/i, '');
     const grid = $('custom-presets-grid');
     if (!grid) return;
-    const empty = grid.querySelector('.e');
+    const empty = grid.querySelector('.empty-note');
     if (empty) empty.remove();
 
     const card = document.createElement('div');
-    card.className = 'pc';
+    card.className = 'preset-card';
     card.dataset.ffx = `${name}.ffx`;
-    card.innerHTML = `<button type="button" class="btn del" title="Remove">×</button><div class="pv">★</div><div class="pi"><h4>${name}</h4><p>FFX preset</p><button type="button" class="btn acti">Apply</button></div>`;
-    card.querySelector('.btn.acti').addEventListener('click', () => {
+    card.innerHTML = `<button type="button" class="btn-delete" title="Remove">×</button><div class="preset-preview">★</div><div class="preset-info"><h4>${name}</h4><p>FFX preset</p><button type="button" class="btn-apply">Apply</button></div>`;
+    card.querySelector('.btn-apply').addEventListener('click', () => {
         evalScript(`applyFFXPreset("${name}", "")`).then((res) => {
             updateStatus(res.success ? `Applied ${name}` : res.error || 'Failed', res.success ? 'success' : 'error');
         });
     });
-    card.querySelector('.btn.del').addEventListener('click', () => {
+    card.querySelector('.btn-delete').addEventListener('click', () => {
         card.remove();
         syncCustomPresetCount();
         let list = JSON.parse(localStorage.getItem(CUSTOM_PRESETS_KEY) || '[]');
@@ -342,10 +342,10 @@ function syncCustomPresetCount() {
     const grid = $('custom-presets-grid');
     const countEl = $('custom-preset-count');
     if (!grid || !countEl) return;
-    const n = grid.querySelectorAll('.pc').length;
+    const n = grid.querySelectorAll('.preset-card').length;
     countEl.textContent = `${n} preset${n === 1 ? '' : 's'}`;
     if (n === 0) {
-        grid.innerHTML = '<p class="e">No custom presets yet. Hit Import Preset to add FFX files.</p>';
+        grid.innerHTML = '<p class="empty-note">No custom presets yet. Hit Import Preset to add FFX files.</p>';
     }
 }
 
@@ -356,15 +356,15 @@ function loadCustomPresetsFromStorage() {
             const grid = $('custom-presets-grid');
             if (!grid || presetExistsInGrid(grid, p.name)) return;
             const card = document.createElement('div');
-            card.className = 'pc';
+            card.className = 'preset-card';
             card.dataset.ffx = `${p.name}.ffx`;
-            card.innerHTML = `<button type="button" class="btn del" title="Remove">×</button><div class="pv">★</div><div class="pi"><h4>${p.name}</h4><p>FFX preset</p><button type="button" class="btn acti">Apply</button></div>`;
-            card.querySelector('.btn.acti').addEventListener('click', () => {
+            card.innerHTML = `<button type="button" class="btn-delete" title="Remove">×</button><div class="preset-preview">★</div><div class="preset-info"><h4>${p.name}</h4><p>FFX preset</p><button type="button" class="btn-apply">Apply</button></div>`;
+            card.querySelector('.btn-apply').addEventListener('click', () => {
                 evalScript(`applyFFXPreset("${p.name}", "")`).then((res) => {
                     updateStatus(res.success ? `Applied ${p.name}` : res.error || 'Failed', res.success ? 'success' : 'error');
                 });
             });
-            card.querySelector('.btn.del').addEventListener('click', () => {
+            card.querySelector('.btn-delete').addEventListener('click', () => {
                 card.remove();
                 syncCustomPresetCount();
                 let stored = JSON.parse(localStorage.getItem(CUSTOM_PRESETS_KEY) || '[]');
@@ -372,7 +372,7 @@ function loadCustomPresetsFromStorage() {
                 localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(stored));
                 evalScript(`deleteFFXPreset("${p.name}")`);
             });
-            const empty = grid.querySelector('.e');
+            const empty = grid.querySelector('.empty-note');
             if (empty) empty.remove();
             grid.appendChild(card);
         }
@@ -381,7 +381,7 @@ function loadCustomPresetsFromStorage() {
 }
 
 function bindEOA() {
-    document.querySelectorAll('.btn.eo').forEach((btn) => {
+    document.querySelectorAll('.eoa-btn').forEach((btn) => {
         btn.addEventListener('click', () => runEOA(btn.dataset.action));
     });
 }
@@ -404,13 +404,13 @@ async function runEOA(action) {
 }
 
 function initGraphPresets() {
-    document.querySelectorAll('.gc').forEach((card) => {
-        const canvas = card.querySelector('.gx');
+    document.querySelectorAll('.graph-preset-card').forEach((card) => {
+        const canvas = card.querySelector('.graph-preset-canvas');
         const preset = card.dataset.preset;
         if (canvas && preset) drawGraphCurve(canvas, preset);
         if (!graphPresetsReady) {
             card.addEventListener('click', () => {
-                document.querySelectorAll('.gc').forEach((c) => c.classList.remove('active'));
+                document.querySelectorAll('.graph-preset-card').forEach((c) => c.classList.remove('active'));
                 card.classList.add('active');
                 applyGraphPreset(preset);
             });
@@ -459,8 +459,8 @@ function drawGraphCurve(canvas, preset) {
 }
 
 function redrawAllGraphCurves() {
-    document.querySelectorAll('.gc').forEach((card) => {
-        const canvas = card.querySelector('.gx');
+    document.querySelectorAll('.graph-preset-card').forEach((card) => {
+        const canvas = card.querySelector('.graph-preset-canvas');
         const preset = card.dataset.preset;
         if (canvas && preset) drawGraphCurve(canvas, preset);
     });
@@ -475,19 +475,30 @@ async function applyGraphPreset(preset) {
 async function loadSFXLibrary() {
     const container = $('sfx-container');
     if (!container) return;
-    container.innerHTML = '<div class="fl">Loading sound effects...</div>';
+    container.innerHTML = '<div class="sfx-loading">Loading sound effects...</div>';
     if (!csInterface) {
-        container.innerHTML = '<div class="fe"><p>Open in After Effects to load SFX</p></div>';
+        container.innerHTML = '<div class="sfx-empty-state"><p>Open in After Effects to load SFX</p></div>';
         return;
     }
-    const res = await evalScript('scanSFXFolder()');
+    let sfxScript = 'scanSFXFolder()';
+    try {
+        if (typeof SystemPath !== 'undefined') {
+            const extPath = csInterface.getSystemPath(SystemPath.EXTENSION);
+            if (extPath) {
+                await evalScript('setExtensionRoot("' + escapePath(extPath) + '")');
+                const sfxPath = extPath.replace(/\\/g, '/') + '/sfx';
+                sfxScript = 'scanSFXFolder("' + escapePath(sfxPath) + '")';
+            }
+        }
+    } catch (e) {}
+    const res = await evalScript(sfxScript);
     if (!res.success) {
         const detail = res.error || res.raw || 'SFX folder not found';
-        container.innerHTML = `<div class="fe"><p>${detail}</p></div>`;
+        container.innerHTML = `<div class="sfx-empty-state"><p>${detail}</p></div>`;
         return;
     }
     if (!res.categories?.length) {
-        container.innerHTML = '<div class="fe"><p>No sound effects found in the sfx folder</p></div>';
+        container.innerHTML = '<div class="sfx-empty-state"><p>No sound effects found in the sfx folder</p></div>';
         return;
     }
     renderSFXCategories(res.categories);
@@ -498,19 +509,19 @@ function renderSFXCategories(categories) {
     container.innerHTML = '';
     categories.forEach((cat) => {
         const block = document.createElement('div');
-        block.className = 'fc';
-        block.innerHTML = `<div class="fch"><button type="button" class="fct"><span class="fnm">${cat.name}</span><span class="fcn">${cat.count} sounds</span></button></div><div class="fls"></div>`;
-        const list = block.querySelector('.fls');
+        block.className = 'sfx-category';
+        block.innerHTML = `<div class="sfx-category-header"><button type="button" class="sfx-category-toggle"><span class="sfx-category-name">${cat.name}</span><span class="sfx-category-count">${cat.count} sounds</span></button></div><div class="sfx-sounds-list"></div>`;
+        const list = block.querySelector('.sfx-sounds-list');
         cat.sounds.forEach((sound) => {
             const row = document.createElement('div');
-            row.className = 'fx';
+            row.className = 'sfx-item';
             const displayName = sound.name.replace(/\.(wav|mp3|m4a)$/i, '');
-            row.innerHTML = `<div class="fxi"><span class="fxn">${displayName}</span><span class="fxs">${(sound.size / 1024 / 1024).toFixed(2)} MB</span></div><div class="fxc"><button type="button" class="btn sp">Play</button><button type="button" class="btn sa">Apply</button></div>`;
-            row.querySelector('.btn.sp').addEventListener('click', () => previewSFX(sound.path, row.querySelector('.btn.sp')));
-            row.querySelector('.btn.sa').addEventListener('click', () => applySFX(sound.path, displayName));
+            row.innerHTML = `<div class="sfx-item-info"><span class="sfx-item-name">${displayName}</span><span class="sfx-item-size">${(sound.size / 1024 / 1024).toFixed(2)} MB</span></div><div class="sfx-item-controls"><button type="button" class="sfx-play-btn">Play</button><button type="button" class="sfx-apply-btn">Apply</button></div>`;
+            row.querySelector('.sfx-play-btn').addEventListener('click', () => previewSFX(sound.path, row.querySelector('.sfx-play-btn')));
+            row.querySelector('.sfx-apply-btn').addEventListener('click', () => applySFX(sound.path, displayName));
             list.appendChild(row);
         });
-        block.querySelector('.fct').addEventListener('click', () => list.classList.toggle('collapsed'));
+        block.querySelector('.sfx-category-toggle').addEventListener('click', () => list.classList.toggle('collapsed'));
         container.appendChild(block);
     });
 }
@@ -519,7 +530,7 @@ function previewSFX(filePath, btn) {
     if (currentAudioPlayer) {
         currentAudioPlayer.pause();
         currentAudioPlayer = null;
-        document.querySelectorAll('.btn.sp').forEach((b) => { b.textContent = 'Play'; });
+        document.querySelectorAll('.sfx-play-btn').forEach((b) => { b.textContent = 'Play'; });
     }
     if (btn.textContent === 'Stop') {
         btn.textContent = 'Play';
@@ -541,8 +552,8 @@ function bindSFXControls() {
     $('refresh-sfx-btn')?.addEventListener('click', loadSFXLibrary);
     $('sfx-search')?.addEventListener('input', (e) => {
         const q = e.target.value.toLowerCase();
-        document.querySelectorAll('.fx').forEach((item) => {
-            const name = item.querySelector('.fxn')?.textContent?.toLowerCase() || '';
+        document.querySelectorAll('.sfx-item').forEach((item) => {
+            const name = item.querySelector('.sfx-item-name')?.textContent?.toLowerCase() || '';
             item.style.display = name.includes(q) ? '' : 'none';
         });
     });
@@ -571,9 +582,9 @@ function bindAssetControls() {
     $('browse-files-btn')?.addEventListener('click', browseAssetFiles);
     $('create-folder-btn')?.addEventListener('click', createAssetFolder);
     $('refresh-assets-btn')?.addEventListener('click', () => loadAssets(currentFolderPath));
-    document.querySelectorAll('.btn.vw').forEach((btn) => {
+    document.querySelectorAll('.view-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.btn.vw').forEach((b) => b.classList.remove('active'));
+            document.querySelectorAll('.view-btn').forEach((b) => b.classList.remove('active'));
             btn.classList.add('active');
             assetViewMode = btn.dataset.view || 'grid';
             const grid = $('asset-grid');
@@ -583,19 +594,19 @@ function bindAssetControls() {
 }
 
 function updateAssetBreadcrumb(folderPath) {
-    const pathEl = document.querySelector('.ap');
+    const pathEl = document.querySelector('.asset-path');
     if (!pathEl) return;
     const parts = folderPath ? folderPath.split('/').filter(Boolean) : [];
-    let html = '<span class="pai' + (parts.length ? '' : ' active') + '" data-path="">Assets</span>';
+    let html = '<span class="path-item' + (parts.length ? '' : ' active') + '" data-path="">Assets</span>';
     let built = '';
     parts.forEach((part, i) => {
         built += (built ? '/' : '') + part;
         const isLast = i === parts.length - 1;
-        html += '<span class="psp">/</span>';
-        html += `<span class="pai${isLast ? ' active' : ''}" data-path="${built}">${part}</span>`;
+        html += '<span class="path-separator">/</span>';
+        html += `<span class="path-item${isLast ? ' active' : ''}" data-path="${built}">${part}</span>`;
     });
     pathEl.innerHTML = html;
-    pathEl.querySelectorAll('.pai').forEach((item) => {
+    pathEl.querySelectorAll('.path-item').forEach((item) => {
         item.addEventListener('click', () => loadAssets(item.dataset.path || ''));
     });
 }
@@ -606,18 +617,18 @@ async function loadAssets(folderPath = '') {
     const grid = $('asset-grid');
     if (!grid) return;
     grid.classList.toggle('list-view', assetViewMode === 'list');
-    grid.innerHTML = '<div class="fl">Loading assets...</div>';
+    grid.innerHTML = '<div class="sfx-loading">Loading assets...</div>';
     const res = await evalScript(`WorFlow.scanAssetsFolder("${escapePath(folderPath)}")`);
     const assets = res.data?.assets || res.assets || [];
     if (!res.success || !assets.length) {
-        grid.innerHTML = '<div class="ae"><p>No assets found. Drop files or browse to import.</p></div>';
+        grid.innerHTML = '<div class="no-assets-message"><p>No assets found. Drop files or browse to import.</p></div>';
         return;
     }
     grid.innerHTML = '';
     if (folderPath) {
         const back = document.createElement('div');
-        back.className = 'ac fd';
-        back.innerHTML = '<div class="at">←</div><div class="ai"><h4>..</h4></div>';
+        back.className = 'asset-card folder-card';
+        back.innerHTML = '<div class="asset-thumbnail">←</div><div class="asset-info"><h4>..</h4></div>';
         back.addEventListener('click', () => {
             const parts = folderPath.split('/');
             parts.pop();
@@ -628,8 +639,8 @@ async function loadAssets(folderPath = '') {
     assets.forEach((asset) => {
         const isFolder = asset.isFolder || asset.type === 'folder';
         const card = document.createElement('div');
-        card.className = `ast-card${isFolder ? ' fld-card' : ''}`;
-        card.innerHTML = `<div class="at">${isFolder ? '📁' : '📄'}</div><div class="ai"><h4>${asset.name}</h4></div>`;
+        card.className = `asset-card${isFolder ? ' folder-card' : ''}`;
+        card.innerHTML = `<div class="asset-thumbnail">${isFolder ? '📁' : '📄'}</div><div class="asset-info"><h4>${asset.name}</h4></div>`;
         card.addEventListener('click', () => {
             if (isFolder) loadAssets(folderPath ? `${folderPath}/${asset.name}` : asset.name);
             else importAssetPath(asset.path);
@@ -722,7 +733,7 @@ function applyAnimationSpeed(speed) {
 
 function updateAccentSwatches(color) {
     const normalized = String(color || '').toLowerCase();
-    document.querySelectorAll('.asi').forEach((btn) => {
+    document.querySelectorAll('.accent-swatch').forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.color?.toLowerCase() === normalized);
     });
 }
@@ -787,7 +798,7 @@ async function refreshSettingsPanel() {
     if (!csInterface) {
         if (statusEl) {
             statusEl.textContent = 'Preview mode';
-            statusEl.className = 'skv v is-warn';
+            statusEl.className = 'settings-kv-value is-warn';
         }
         if (versionEl) versionEl.textContent = 'Not in After Effects';
         return;
@@ -795,20 +806,20 @@ async function refreshSettingsPanel() {
 
     try {
         const host = csInterface.getHostEnvironment();
-        if (host?.aId === 'AEFT') {
+        if (host?.appId === 'AEFT') {
             if (statusEl) {
                 statusEl.textContent = 'Connected';
-                statusEl.className = 'skv v is-ok';
+                statusEl.className = 'settings-kv-value is-ok';
             }
-            if (versionEl && host.aVersion) versionEl.textContent = host.aVersion;
+            if (versionEl && host.appVersion) versionEl.textContent = host.appVersion;
         } else if (statusEl) {
             statusEl.textContent = 'Wrong host app';
-            statusEl.className = 'skv v is-warn';
+            statusEl.className = 'settings-kv-value is-warn';
         }
     } catch (e) {
         if (statusEl) {
             statusEl.textContent = 'Unknown';
-            statusEl.className = 'skv v is-warn';
+            statusEl.className = 'settings-kv-value is-warn';
         }
     }
 
@@ -822,7 +833,7 @@ async function refreshSettingsPanel() {
 }
 
 function bindSettings() {
-    document.querySelectorAll('.asi').forEach((btn) => {
+    document.querySelectorAll('.accent-swatch').forEach((btn) => {
         btn.addEventListener('click', () => {
             const color = btn.dataset.color;
             if (!color) return;
@@ -921,7 +932,7 @@ function toggleRainbow() {
     }
     rainbowModeActive = true;
     $('rainbow-mode-btn')?.classList.add('active');
-    document.querySelectorAll('.asi').forEach((btn) => btn.classList.remove('active'));
+    document.querySelectorAll('.accent-swatch').forEach((btn) => btn.classList.remove('active'));
     let hue = 0;
     rainbowInterval = setInterval(() => {
         hue = (hue + 3) % 360;
@@ -937,7 +948,7 @@ function bindOnboarding() {
         if (currentOnboardingStep < 4) { currentOnboardingStep++; refreshOnboarding(); }
     });
     $('onboarding-finish')?.addEventListener('click', finishOnboarding);
-    document.querySelectorAll('.ods .d').forEach((dot) => {
+    document.querySelectorAll('.onboarding-dots .dot').forEach((dot) => {
         dot.addEventListener('click', () => {
             currentOnboardingStep = parseInt(dot.dataset.step, 10);
             refreshOnboarding();
@@ -946,10 +957,10 @@ function bindOnboarding() {
 }
 
 function refreshOnboarding() {
-    document.querySelectorAll('.ost').forEach((step) => {
+    document.querySelectorAll('.onboarding-step').forEach((step) => {
         step.classList.toggle('active', parseInt(step.dataset.step, 10) === currentOnboardingStep);
     });
-    document.querySelectorAll('.ods .d').forEach((dot) => {
+    document.querySelectorAll('.onboarding-dots .dot').forEach((dot) => {
         dot.classList.toggle('active', parseInt(dot.dataset.step, 10) === currentOnboardingStep);
     });
     if ($('onboarding-prev')) $('onboarding-prev').disabled = currentOnboardingStep === 1;
@@ -1012,7 +1023,7 @@ async function boot() {
     bindSFXControls();
     bindSettings();
     bindOnboarding();
-    document.querySelector('.help')?.addEventListener('click', showOnboarding);
+    document.querySelector('.help-btn')?.addEventListener('click', showOnboarding);
     await initAfterEffects();
     await loadAllSettings();
     loadCustomPresetsFromStorage();
