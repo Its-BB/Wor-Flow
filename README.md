@@ -6,7 +6,7 @@ AE panel for one-click effects, graph curves, SFX, and local assets—without le
 
 ## Demo
 
-[▶ Watch Demo](assets/demo.mp4)
+[▶ Watch Demo](https://vimeo.com/1203157219?share=copy&fl=sv&fe=ci)
 
 ## Try it
 
