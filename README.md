@@ -4,6 +4,10 @@ AE panel for one-click effects, graph curves, SFX, and local assets—without le
 
 ![Wor Flow presets tab](assets/previews/presets.png)
 
+## Demo
+
+[▶ Watch Demo](assets/demo.mp4)
+
 ## Try it
 
 1. Install the extension (see below).
